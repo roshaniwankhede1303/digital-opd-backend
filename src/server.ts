@@ -11,33 +11,59 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: '*',
-  },
+    origin: '*'
+  }
 });
 
 io.on('connection', (socket) => {
   console.log('✅ User connected:', socket.id);
 
+  // Send welcome message immediately
+
   const game = new GameEngine();
 
-  socket.on('join', async ({ userName }) => {
+  socket.on('join', async () => {
+    console.log('join roshan');
+
     const { patient } = await game.startNewGame();
-    socket.emit('message',{patient}, `👩‍⚕️ Welcome ${userName}! Here's your patient case`, );
-    socket.emit('case_started', { patient });
+    socket.emit('game_ready');
+
+    socket.emit('case_started', {
+      patient_query: `
+      Hi Dr. Roshni, Good to see you.
+      I have been having ${patient.symptoms} 
+      and \n ${patient.history}
+      `,
+      patient_display_name: patient.getDisplayName()
+    });
+
+    socket.emit('senior_doctor_message', {
+      message: patient.senior_doctor_summary,
+      next_event: 'submit_test'
+    });
   });
 
   socket.on('submit_test', async (msg: string) => {
     const result = await game.submitTest(msg);
     const stage = game.getCurrentStage();
-    const score = game.getScore()
+    const score = game.getScore();
 
-    socket.emit('message', result);
-
-    if (stage === 'diagnosis') {
-      socket.emit('message', `You Scored ${score}/5 🩺 Now enter your diagnosis.`);
-      game.resetScore()
+    if (result.includes('Correct test')) {
+      socket.emit('senior_doctor_message', {
+        message: `Great choice, Doctor! Here are the results from the report: 
+        ${result}
+        Now enter your diagnosis.`,
+        score: `${score}/5`,
+        next_event: 'submit_diagnosis'
+      });
+      game.resetScore();
+    } else {
+      socket.emit('senior_doctor_message', {
+        message: result,
+        score: `${score}/5`,
+        next_event: 'submit_test'
+      });
     }
- 
   });
 
   socket.on('submit_diagnosis', async (msg: string) => {
@@ -45,13 +71,26 @@ io.on('connection', (socket) => {
     const score = game.getScore();
     const stage = game.getCurrentStage();
 
-    socket.emit('message', result);
+    if (result.includes('Correct')) {
+      socket.emit('senior_doctor_message', {
+        message: `🎉 Case complete! diagnosis Score: ${score}/5`,
+        next_event: 'next_patient'
+      });
+    } else {
+      socket.emit('senior_doctor_message', {
+        message: result,
+        score: `${score}/5`,
+        next_event: 'submit_diagnosis'
+      });
+    }
+
+    socket.emit('senior_doctor_message', {
+      message: result,
+      score: `${score}/5`,
+      next_event: 'next_patient'
+    });
 
     if (stage === 'done') {
-      socket.emit('message', {
-        message: `🎉 Case complete! diagnosis Score: ${score}/5`,
-        score,
-      });
     }
   });
 

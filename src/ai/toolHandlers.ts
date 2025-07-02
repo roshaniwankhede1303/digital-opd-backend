@@ -3,40 +3,49 @@
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import dotenv from 'dotenv';
+import { Patient } from '@src/game/patients';
 dotenv.config();
 
 const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY!,
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY!
 });
 
 export const toolHandlers = {
-  get_next_case: async () => {
+  get_next_case: async (): Promise<Patient> => {
     const { text } = await generateText({
       model: google('gemini-2.0-flash'),
       prompt: `
-Generate a realistic NEET-PG style patient case in the following JSON format:
+Generate a realistic NEET-PG style patient case given by a actual patient (keep language simple like a human describing a health issue)
+senior_doctor_summary will summarise the case for junior doctor so that junior doctor find the correct test and diagnosis by themself so dont give any hints, for in the following JSON format:
 {
   "age": <number>,
   "gender": <"Male" | "Female">,
+  "name": <string>,
   "history": <string>,
   "symptoms": <string>,
   "additionalInfo": <string>,
   "correctTest": <string>,
-  "correctDiagnosis": <string>
+  "correctDiagnosis": <string>,
+  "senior_doctor_summary": <string>
 }
 Only return valid JSON. No explanation. Strictly JSON only.
-`,
+`
     });
-    console.log("text" , text);
-        // Strip Markdown formatting like ```json ... ```
+    console.log('text', text);
+    // Strip Markdown formatting like ```json ... ```
     const cleanText = text.replace(/```json|```/g, '').trim();
 
-    console.log("Gemini response:\n", cleanText);
+    console.log('Gemini response:\n', cleanText);
 
     const caseJson = JSON.parse(cleanText);
-    console.log("caseJson\n", caseJson);
+    console.log('caseJson\n', caseJson);
+    // Create Patient instance
+    const patient = new Patient(caseJson);
+    console.log('✅ Patient created:', patient.getDisplayName());
 
-    return { patient: caseJson };
+    return patient;
+
+    // return { patient: caseJson };
   },
 
   evaluate_test: async ({ selectedTest, correctTest }: any) => {
@@ -44,28 +53,31 @@ Only return valid JSON. No explanation. Strictly JSON only.
       model: google('gemini-2.0-flash'),
       prompt: `
 Given that the correct diagnostic test is: "${correctTest}", is the selected test "${selectedTest}" appropriate?
-Respond with either:
-✅ Correct test.
+Respond with:
+✅ Correct test, (Explain briefly What are the findings of the ${selectedTest} test?)
 OR
-❌ Incorrect test. Explain briefly.
-`,
+❌ Incorrect test. Explain briefly on why this ${selectedTest} is not appropriate and a try again message but don't give any hint about ${correctTest}.
+`
     });
-    console.log('eval', text)
-    return { result: text.trim() };
+    if (text.includes('Correct test')) {
+      return { result: text.trim(), pass: true };
+    } else {
+      return { result: text.trim(), pass: false };
+    }
   },
 
   evaluate_diagnosis: async ({ selectedDiagnosis, correctDiagnosis }: any) => {
     const { text } = await generateText({
       model: google('gemini-2.0-flash'),
       prompt: `
-Given that the correct diagnosis is: "${correctDiagnosis}", is "${selectedDiagnosis}" accurate?
-Respond with either:
-✅ Correct diagnosis.
+Given that the correct diagnosis is: "${selectedDiagnosis}", is the selected Diagnosis "${correctDiagnosis}" correct?
+Respond with:
+✅ Correct Diagnosis, (Explain why ${correctDiagnosis} is the correct Diagnosis?)
 OR
-❌ Incorrect diagnosis. Explain briefly.
-`,
+❌ Incorrect Diagnosis. Explain briefly on why this ${selectedDiagnosis} is not correct and a try again message but don't give any hint about ${correctDiagnosis}.
+`
     });
 
     return { result: text.trim() };
-  },
+  }
 };
