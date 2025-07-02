@@ -11,7 +11,6 @@
     "esModuleInterop": true, // Enables compatibility with default imports from modules
     "moduleResolution": "node", // Choose a module resolution strategy
     "resolveJsonModule": true,
-    // "removeComments": true,
 
     "paths": {
       "@src/*": ["src/*"] // absolute paths
