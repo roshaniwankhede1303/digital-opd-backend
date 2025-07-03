@@ -34,7 +34,7 @@ io.on('connection', (socket) => {
       I have been having ${patient.symptoms} 
       and \n ${patient.history}
       `,
-      patient_display_name: patient.getDisplayName()
+      patient_info: patient.getDisplayName()
     });
 
     socket.emit('senior_doctor_message', {
@@ -53,14 +53,14 @@ io.on('connection', (socket) => {
         message: `Great choice, Doctor! Here are the results from the report: 
         ${result}
         Now enter your diagnosis.`,
-        score: test_score,
+        test_score: test_score,
         next_event: 'submit_diagnosis'
       });
       game.resetScore();
     } else {
       socket.emit('senior_doctor_message', {
         message: result,
-        score: test_score,
+        test_score: test_score,
         next_event: 'submit_test'
       });
     }
@@ -86,13 +86,6 @@ io.on('connection', (socket) => {
         next_event: 'submit_diagnosis'
       });
     }
-
-    // socket.emit('senior_doctor_message', {
-    //   message: result,
-    //   score: `${score}/5`,
-    //   next_event: 'next_patient'
-    // });
-
     if (stage === 'done') {
     }
   });

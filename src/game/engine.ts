@@ -16,8 +16,8 @@ export class GameEngine {
     this.state = {
       stage: 'intro',
       patient: null,
-      test_score: 0,
-      diagnosis_score: 0,
+      test_score: 5,
+      diagnosis_score: 5,
       attempts: 0
     };
   }
@@ -27,8 +27,8 @@ export class GameEngine {
     this.state = {
       stage: 'test',
       patient: patient.toJSON(),
-      test_score: 0,
-      diagnosis_score: 0,
+      test_score: 5,
+      diagnosis_score: 5,
       attempts: 0
     };
     console.log('patient', patient);
@@ -43,13 +43,22 @@ export class GameEngine {
     });
 
     const isCorrect = response.result.includes('✅');
+
     if (isCorrect) {
+      // Keep the current score as final score
       this.state.stage = 'diagnosis';
-      this.state.test_score += 5 - this.state.attempts * 2;
       this.state.attempts = 0;
+      console.log('test score check (correct):', this.state.test_score);
     } else {
+      // Reduce score by 2 for each incorrect attempt
       this.state.attempts += 1;
+      this.state.test_score = Math.max(0, 5 - this.state.attempts * 2);
+      console.log(
+        'test score check (incorrect, attempt #' + this.state.attempts + '):',
+        this.state.test_score
+      );
     }
+
     return response.result;
   }
 
@@ -60,11 +69,20 @@ export class GameEngine {
     });
 
     const isCorrect = response.result.includes('✅');
+
     if (isCorrect) {
+      // Keep the current score as final score
       this.state.stage = 'done';
-      this.state.diagnosis_score += 5 - this.state.attempts * 2;
+      this.state.attempts = 0;
+      console.log('diagnosis score check (correct):', this.state.diagnosis_score);
     } else {
+      // Reduce score by 2 for each incorrect attempt
       this.state.attempts += 1;
+      this.state.diagnosis_score = Math.max(0, 5 - this.state.attempts * 2);
+      console.log(
+        'diagnosis score check (incorrect, attempt #' + this.state.attempts + '):',
+        this.state.diagnosis_score
+      );
     }
 
     return response.result;
