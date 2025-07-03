@@ -46,21 +46,21 @@ io.on('connection', (socket) => {
   socket.on('submit_test', async (msg: string) => {
     const result = await game.submitTest(msg);
     const stage = game.getCurrentStage();
-    const score = game.getScore();
+    const test_score = game.getTestScore();
 
     if (result.includes('Correct test')) {
       socket.emit('senior_doctor_message', {
         message: `Great choice, Doctor! Here are the results from the report: 
         ${result}
         Now enter your diagnosis.`,
-        score: `${score}/5`,
+        score: test_score,
         next_event: 'submit_diagnosis'
       });
       game.resetScore();
     } else {
       socket.emit('senior_doctor_message', {
         message: result,
-        score: `${score}/5`,
+        score: test_score,
         next_event: 'submit_test'
       });
     }
@@ -68,27 +68,30 @@ io.on('connection', (socket) => {
 
   socket.on('submit_diagnosis', async (msg: string) => {
     const result = await game.submitDiagnosis(msg);
-    const score = game.getScore();
+    const test_score = game.getTestScore();
     const stage = game.getCurrentStage();
+    const diagnosis_score = game.getDiagnosisScore();
 
     if (result.includes('Correct')) {
       socket.emit('senior_doctor_message', {
-        message: `🎉 Case complete! diagnosis Score: ${score}/5`,
-        next_event: 'next_patient'
+        message: `🎉 Case complete! diagnosis Score: ${diagnosis_score}/5`,
+        next_event: 'next-patient',
+        test_score: test_score,
+        diagnosis_score: diagnosis_score
       });
     } else {
       socket.emit('senior_doctor_message', {
         message: result,
-        score: `${score}/5`,
+        diagnosis_score: diagnosis_score,
         next_event: 'submit_diagnosis'
       });
     }
 
-    socket.emit('senior_doctor_message', {
-      message: result,
-      score: `${score}/5`,
-      next_event: 'next_patient'
-    });
+    // socket.emit('senior_doctor_message', {
+    //   message: result,
+    //   score: `${score}/5`,
+    //   next_event: 'next_patient'
+    // });
 
     if (stage === 'done') {
     }

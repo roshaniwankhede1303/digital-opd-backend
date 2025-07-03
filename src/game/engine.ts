@@ -4,7 +4,8 @@ import { Patient } from './patients';
 type GameState = {
   stage: 'intro' | 'test' | 'diagnosis' | 'done';
   patient: any | null;
-  score: number;
+  test_score: number;
+  diagnosis_score: number;
   attempts: number;
 };
 
@@ -15,7 +16,8 @@ export class GameEngine {
     this.state = {
       stage: 'intro',
       patient: null,
-      score: 0,
+      test_score: 0,
+      diagnosis_score: 0,
       attempts: 0
     };
   }
@@ -25,7 +27,8 @@ export class GameEngine {
     this.state = {
       stage: 'test',
       patient: patient.toJSON(),
-      score: 0,
+      test_score: 0,
+      diagnosis_score: 0,
       attempts: 0
     };
     console.log('patient', patient);
@@ -42,12 +45,11 @@ export class GameEngine {
     const isCorrect = response.result.includes('✅');
     if (isCorrect) {
       this.state.stage = 'diagnosis';
-      this.state.score += 5 - this.state.attempts * 2;
+      this.state.test_score += 5 - this.state.attempts * 2;
       this.state.attempts = 0;
     } else {
       this.state.attempts += 1;
     }
-
     return response.result;
   }
 
@@ -60,7 +62,7 @@ export class GameEngine {
     const isCorrect = response.result.includes('✅');
     if (isCorrect) {
       this.state.stage = 'done';
-      this.state.score += 5 - this.state.attempts * 2;
+      this.state.diagnosis_score += 5 - this.state.attempts * 2;
     } else {
       this.state.attempts += 1;
     }
@@ -72,12 +74,16 @@ export class GameEngine {
     return this.state.stage;
   }
 
-  getScore() {
-    return this.state.score;
+  getTestScore() {
+    return this.state.test_score;
+  }
+
+  getDiagnosisScore() {
+    return this.state.diagnosis_score;
   }
 
   resetScore() {
-    this.state.score = 0;
+    this.state.diagnosis_score = 0;
   }
 
   getCurrentPatient() {

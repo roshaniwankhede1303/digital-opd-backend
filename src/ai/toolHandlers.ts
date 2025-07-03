@@ -70,11 +70,11 @@ OR
     const { text } = await generateText({
       model: google('gemini-2.0-flash'),
       prompt: `
-Given that the correct diagnosis is: "${selectedDiagnosis}", is the selected Diagnosis "${correctDiagnosis}" correct?
+Given that the correct diagnosis is: "${correctDiagnosis}", is the selected Diagnosis "${selectedDiagnosis}" correct?
 Respond with:
-✅ Correct Diagnosis, (Explain why ${correctDiagnosis} is the correct Diagnosis?)
+✅ Correct Diagnosis, (Explain why ${selectedDiagnosis} is the correct Diagnosis?, don't give any hint about ${correctDiagnosis})
 OR
-❌ Incorrect Diagnosis. Explain briefly on why this ${selectedDiagnosis} is not correct and a try again message but don't give any hint about ${correctDiagnosis}.
+❌ Incorrect Diagnosis. Explain briefly on why the ${selectedDiagnosis} is not the correct Diagnosis and a try again message but don't give any hint about ${correctDiagnosis}.
 `
     });
 
