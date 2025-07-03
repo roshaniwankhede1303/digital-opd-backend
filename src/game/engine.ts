@@ -57,12 +57,10 @@ export class GameEngine {
   async submitTest(selectedTest: string) {
     // Add safety checks
     if (!this.state.patient) {
-      console.error('❌ No patient data available');
       return '❌ Error: No patient case loaded. Please start a new case.';
     }
 
     if (!this.state.patient.correctTest) {
-      console.error('❌ No correct test defined for patient:', this.state.patient);
       return '❌ Error: Patient case is incomplete. Please start a new case.';
     }
 
@@ -91,7 +89,6 @@ export class GameEngine {
 
       return response.result;
     } catch (error) {
-      console.error('❌ Error in submitTest:', error);
       return '❌ Error evaluating test. Please try again.';
     }
   }

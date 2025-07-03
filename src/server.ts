@@ -29,11 +29,7 @@ io.on('connection', (socket) => {
     socket.emit('game_ready');
 
     socket.emit('case_started', {
-      patient_query: `
-      Hi Dr. Roshni, Good to see you.
-      I have been having ${patient.symptoms} 
-      and \n ${patient.history}
-      `,
+      patient_query: `Hi Dr. Roshni, Good to see you. /n I have been having ${patient.symptoms} and ${patient.history}`,
       patient_info: patient.getDisplayName()
     });
 
@@ -47,7 +43,6 @@ io.on('connection', (socket) => {
     const result = await game.submitTest(msg);
     const stage = game.getCurrentStage();
     const test_score = game.getTestScore();
-
     if (result.includes('Correct test')) {
       socket.emit('senior_doctor_message', {
         message: `Great choice, Doctor! Here are the results from the report: 
@@ -56,7 +51,7 @@ io.on('connection', (socket) => {
         test_score: test_score,
         next_event: 'submit_diagnosis'
       });
-      game.resetScore();
+      // game.resetScore();
     } else {
       socket.emit('senior_doctor_message', {
         message: result,
@@ -86,8 +81,8 @@ io.on('connection', (socket) => {
         next_event: 'submit_diagnosis'
       });
     }
-    if (stage === 'done') {
-    }
+    // if (stage === 'done') {
+    // }
   });
 
   socket.on('next-patient', async () => {
@@ -97,11 +92,8 @@ io.on('connection', (socket) => {
 
     // Send the same structure as initial join
     socket.emit('case_started', {
-      patient_query: `
-        Hi Dr. Roshni, Good to see you.
-        I have been having ${patient.symptoms} 
-        and \n ${patient.history}
-        `,
+      patient_query: `Hi Dr. Roshni, Good to see you.
+I have been having ${patient.symptoms} and ${patient.history}`,
       patient_info: patient.getDisplayName()
     });
 
