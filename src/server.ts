@@ -41,7 +41,6 @@ io.on('connection', (socket) => {
 
   socket.on('submit_test', async (msg: string) => {
     const result = await game.submitTest(msg);
-    const stage = game.getCurrentStage();
     const test_score = game.getTestScore();
     if (result.includes('Correct test')) {
       socket.emit('senior_doctor_message', {
@@ -51,7 +50,6 @@ io.on('connection', (socket) => {
         test_score: test_score,
         next_event: 'submit_diagnosis'
       });
-      // game.resetScore();
     } else {
       socket.emit('senior_doctor_message', {
         message: result,
@@ -64,7 +62,6 @@ io.on('connection', (socket) => {
   socket.on('submit_diagnosis', async (msg: string) => {
     const result = await game.submitDiagnosis(msg);
     const test_score = game.getTestScore();
-    const stage = game.getCurrentStage();
     const diagnosis_score = game.getDiagnosisScore();
 
     if (result.includes('Correct')) {
@@ -81,8 +78,6 @@ io.on('connection', (socket) => {
         next_event: 'submit_diagnosis'
       });
     }
-    // if (stage === 'done') {
-    // }
   });
 
   socket.on('next-patient', async () => {

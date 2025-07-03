@@ -29,7 +29,6 @@ export const toolHandlers = {
     const randomAge = ages[Math.floor(Math.random() * ages.length)];
     const randomGender = genders[Math.floor(Math.random() * genders.length)];
     const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
-    const caseId = Math.random().toString(36).substring(7);
 
     const { text } = await generateText({
       model: google('gemini-2.0-flash'),
