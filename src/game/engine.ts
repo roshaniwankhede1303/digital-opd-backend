@@ -23,43 +23,77 @@ export class GameEngine {
   }
 
   async startNewGame() {
-    const patient: Patient = await toolHandlers.get_next_case();
-    this.state = {
-      stage: 'test',
-      patient: patient.toJSON(),
-      test_score: 5,
-      diagnosis_score: 5,
-      attempts: 0
-    };
-    console.log('patient', patient);
+    try {
+      const patient: Patient = await toolHandlers.get_next_case();
 
-    return { stage: this.state.stage, patient };
+      // Convert patient to JSON and ensure required properties exist
+      const patientJson = patient.toJSON();
+
+      // Validate required properties
+      if (!patientJson.correctTest || !patientJson.correctDiagnosis) {
+        console.error('❌ Patient missing required properties:', patientJson);
+        throw new Error('Invalid patient data');
+      }
+
+      this.state = {
+        stage: 'test',
+        patient: patientJson,
+        test_score: 5,
+        diagnosis_score: 5,
+        attempts: 0
+      };
+
+      console.log('✅ New game started with patient:', patientJson.name);
+      console.log('Correct test:', patientJson.correctTest);
+      console.log('Correct diagnosis:', patientJson.correctDiagnosis);
+
+      return { stage: this.state.stage, patient };
+    } catch (error) {
+      console.error('❌ Error starting new game:', error);
+      throw error;
+    }
   }
 
   async submitTest(selectedTest: string) {
-    const response = await toolHandlers.evaluate_test({
-      selectedTest,
-      correctTest: this.state.patient.correctTest
-    });
-
-    const isCorrect = response.result.includes('✅');
-
-    if (isCorrect) {
-      // Keep the current score as final score
-      this.state.stage = 'diagnosis';
-      this.state.attempts = 0;
-      console.log('test score check (correct):', this.state.test_score);
-    } else {
-      // Reduce score by 2 for each incorrect attempt
-      this.state.attempts += 1;
-      this.state.test_score = Math.max(0, 5 - this.state.attempts * 2);
-      console.log(
-        'test score check (incorrect, attempt #' + this.state.attempts + '):',
-        this.state.test_score
-      );
+    // Add safety checks
+    if (!this.state.patient) {
+      console.error('❌ No patient data available');
+      return '❌ Error: No patient case loaded. Please start a new case.';
     }
 
-    return response.result;
+    if (!this.state.patient.correctTest) {
+      console.error('❌ No correct test defined for patient:', this.state.patient);
+      return '❌ Error: Patient case is incomplete. Please start a new case.';
+    }
+
+    try {
+      const response = await toolHandlers.evaluate_test({
+        selectedTest,
+        correctTest: this.state.patient.correctTest
+      });
+
+      const isCorrect = response.result.includes('✅');
+
+      if (isCorrect) {
+        // Keep the current score as final score
+        this.state.stage = 'diagnosis';
+        this.state.attempts = 0;
+        console.log('test score check (correct):', this.state.test_score);
+      } else {
+        // Reduce score by 2 for each incorrect attempt
+        this.state.attempts += 1;
+        this.state.test_score = Math.max(0, 5 - this.state.attempts * 2);
+        console.log(
+          'test score check (incorrect, attempt #' + this.state.attempts + '):',
+          this.state.test_score
+        );
+      }
+
+      return response.result;
+    } catch (error) {
+      console.error('❌ Error in submitTest:', error);
+      return '❌ Error evaluating test. Please try again.';
+    }
   }
 
   async submitDiagnosis(selectedDiagnosis: string) {

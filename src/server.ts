@@ -91,8 +91,24 @@ io.on('connection', (socket) => {
   });
 
   socket.on('next-patient', async () => {
+    console.log('🔄 Starting next patient');
+
     const { patient } = await game.startNewGame();
-    socket.emit('case_started', { patient });
+
+    // Send the same structure as initial join
+    socket.emit('case_started', {
+      patient_query: `
+        Hi Dr. Roshni, Good to see you.
+        I have been having ${patient.symptoms} 
+        and \n ${patient.history}
+        `,
+      patient_info: patient.getDisplayName()
+    });
+
+    socket.emit('senior_doctor_message', {
+      message: patient.senior_doctor_summary,
+      next_event: 'submit_test'
+    });
   });
 
   socket.on('disconnect', () => {

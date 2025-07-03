@@ -12,40 +12,91 @@ const google = createGoogleGenerativeAI({
 
 export const toolHandlers = {
   get_next_case: async (): Promise<Patient> => {
+    // Generate random elements for more variation
+    const ages = [25, 35, 45, 55, 65, 72];
+    const genders: ('Male' | 'Female')[] = ['Male', 'Female']; // Fix: Proper typing
+    const conditions = [
+      { test: 'X-ray chest', diagnosis: 'Pneumonia' },
+      { test: 'ECG', diagnosis: 'Myocardial infarction' },
+      { test: 'Blood glucose', diagnosis: 'Diabetes mellitus' },
+      { test: 'CT scan head', diagnosis: 'Stroke' },
+      { test: 'Ultrasound abdomen', diagnosis: 'Gallstones' },
+      { test: 'Blood pressure', diagnosis: 'Hypertension' },
+      { test: 'CBC', diagnosis: 'Anemia' },
+      { test: 'Urinalysis', diagnosis: 'UTI' }
+    ];
+
+    const randomAge = ages[Math.floor(Math.random() * ages.length)];
+    const randomGender = genders[Math.floor(Math.random() * genders.length)];
+    const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
+    const caseId = Math.random().toString(36).substring(7);
+
     const { text } = await generateText({
       model: google('gemini-2.0-flash'),
       prompt: `
-Generate a realistic NEET-PG style patient case given by a actual patient (keep language simple like a human describing a health issue)
-senior_doctor_summary will summarise the case for junior doctor so that junior doctor find the correct test and diagnosis by themself so dont give any hints, for in the following JSON format:
+Generate a medical case with these EXACT specifications:
+
+Requirements:
+- Age: ${randomAge}
+- Gender: ${randomGender}
+- Correct test: "${randomCondition.test}"
+- Correct diagnosis: "${randomCondition.diagnosis}"
+
+Create a patient case where the symptoms clearly point to ${randomCondition.diagnosis} and the appropriate test is ${randomCondition.test}.
+
+IMPORTANT: Use EXACTLY these values:
+- correctTest: "${randomCondition.test}" (nothing else)
+- correctDiagnosis: "${randomCondition.diagnosis}" (nothing else)
+
+JSON format:
 {
-  "age": <number>,
-  "gender": <"Male" | "Female">,
-  "name": <string>,
-  "history": <string>,
-  "symptoms": <string>,
-  "additionalInfo": <string>,
-  "correctTest": <string>,
-  "correctDiagnosis": <string>,
-  "senior_doctor_summary": <string>
+  "age": ${randomAge},
+  "gender": "${randomGender}",
+  "name": "<simple name>",
+  "history": "<brief relevant history>",
+  "symptoms": "<simple symptoms description>",
+  "additionalInfo": "<brief additional info>",
+  "correctTest": "${randomCondition.test}",
+  "correctDiagnosis": "${randomCondition.diagnosis}",
+  "senior_doctor_summary": "<brief guidance without giving answers>"
 }
-Only return valid JSON. No explanation. Strictly JSON only.
-`
+
+Only return valid JSON. No markdown formatting.`
     });
-    console.log('text', text);
-    // Strip Markdown formatting like ```json ... ```
+
+    console.log('Generated case for:', randomCondition.diagnosis);
     const cleanText = text.replace(/```json|```/g, '').trim();
 
-    console.log('Gemini response:\n', cleanText);
+    try {
+      const caseJson = JSON.parse(cleanText);
+      // Force the correct values to ensure consistency
+      caseJson.correctTest = randomCondition.test;
+      caseJson.correctDiagnosis = randomCondition.diagnosis;
+      caseJson.gender = randomGender; // Ensure proper typing
 
-    const caseJson = JSON.parse(cleanText);
-    console.log('caseJson\n', caseJson);
-    // Create Patient instance
-    const patient = new Patient(caseJson);
-    console.log('✅ Patient created:', patient.getDisplayName());
+      const patient = new Patient(caseJson);
+      console.log('✅ Patient created:', patient.getDisplayName());
+      console.log('Test:', caseJson.correctTest);
+      console.log('Diagnosis:', caseJson.correctDiagnosis);
 
-    return patient;
-
-    // return { patient: caseJson };
+      return patient;
+    } catch (error) {
+      console.error('Failed to parse JSON:', error);
+      // Fix: Properly typed fallback case
+      const fallbackCase = {
+        age: randomAge,
+        gender: randomGender, // This is now properly typed as "Male" | "Female"
+        name: randomGender === 'Male' ? 'John Doe' : 'Jane Doe',
+        history: 'Previous medical history unremarkable',
+        symptoms: 'Patient presents with typical symptoms',
+        additionalInfo: 'No additional information',
+        correctTest: randomCondition.test,
+        correctDiagnosis: randomCondition.diagnosis,
+        senior_doctor_summary:
+          'Please evaluate the patient and suggest appropriate diagnostic test.'
+      };
+      return new Patient(fallbackCase);
+    }
   },
 
   evaluate_test: async ({ selectedTest, correctTest }: any) => {
