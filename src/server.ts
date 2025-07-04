@@ -29,7 +29,7 @@ io.on('connection', (socket) => {
     socket.emit('game_ready');
 
     socket.emit('case_started', {
-      patient_query: `Hi Dr. Roshni, Good to see you. /n I have been having ${patient.symptoms} and ${patient.history}`,
+      patient_query: `Hi Dr. Roshni, Good to see you. I have been having ${patient.symptoms} and ${patient.history}`,
       patient_info: patient.getDisplayName()
     });
 
